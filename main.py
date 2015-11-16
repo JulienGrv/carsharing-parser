@@ -83,11 +83,11 @@ def main():
     origin = "Sens"
     destination = "Troyes"
     date = "19/11/2015"
-    number = "10"
+    number = "100"
     url = blablacar_url(origin, destination, date, number)
     soup = get_blablacar_soup(url)
     number = get_number_blablacar(soup)
-    if int(number) > 10:
+    if int(number) > 100:
         url = blablacar_url(origin, destination, date, number)
         print(url)
         soup = get_blablacar_soup(url)

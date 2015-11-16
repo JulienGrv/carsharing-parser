@@ -3,10 +3,12 @@
 We are noone.
 
 ## How to compile
-You need to install 2 libraries : urllib and lxml.
+You need to install these libraries : bs4, certifi, urllib3 and lxml.
 On Windows, just open a PowerShell as Admin and then type:
 ```
-pip install urllib
+pip install bs4
+pip install certifi
+pip install urllib3
 pip install lxml-3.5.0-cp35-none-win_amd64.whl
 ```
 lxml-3.5.0-cp35-none-win_amd64 is include in the git.
