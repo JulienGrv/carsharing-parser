@@ -5,7 +5,7 @@ import os
 import sys
 import codecs
 import urllib3
-import urllib.request as urllib
+import re
 import certifi
 import bs4 as BeautifulSoup
 
@@ -23,7 +23,7 @@ def http_request(url):
 # response - http request response
 ##
 def html_content(response):
-    return response.data.decode('latin-1')
+    return response.data.decode('utf-8')
 
 ##
 # save html content in a file
@@ -33,7 +33,7 @@ def html_content(response):
 def save_html(html, file_name):
     file = open(file_name + '.html', "w")
     for line in html.splitlines():
-        line += '\n'
+        line += u'\n'
         file.write(line.encode('cp1252', errors='replace').decode('cp1252'))
     file.close()
 
@@ -53,24 +53,52 @@ def open_html(file_name):
 # destination
 # date
 ##
-def blablacar_url(origin, destination, date):
-   return u"https://www.blablacar.fr/search?fn="+origin+"&tn="+destination+"&db="+date+"&sort=trip_date&order=asc&limit=1000"
+def blablacar_url(origin, destination, date, limit):
+   return u"https://www.blablacar.co.uk/search?fn="+origin+"&tn="+destination+"&db="+date+"&sort=trip_date&order=asc&limit="+limit
 
 ##
-# main
+#
 ##
-def main():
-    print("Hello World!")
-    # url = u"https://www.blablacar.fr/trajets/paris/bordeaux/#?fn=Paris&fc=48.856614%7C2.352222&fcc=FR&tn=Bordeaux&tc=44.837789%7C-0.57918&tcc=FR&db=20/11/2015&sort=trip_price_euro&order=asc&limit=100"
-    url = blablacar_url("Paris", "Bordeaux", "20/11/2015")
+def get_blablacar_soup(url):
     resp = http_request(url)
     html = html_content(resp)
     resp.close()
     save_html(html, "test")
-    soup = BeautifulSoup.BeautifulSoup(html, "lxml")
-    for p in soup.find_all('h2', 'username'):
-        print(p)
-    # open_html("test")
+    return BeautifulSoup.BeautifulSoup(html, "lxml")
+
+##
+# 
+##
+def get_number_blablacar(soup):
+    text = soup.find('div', 'pagination-info span3').get_text(strip=True)
+    results = re.search('.+ ([0-9]+) results', text)
+    if results:
+        number = results.group(1)
+    return number
+
+# main
+##
+def main():
+    print("Hello World!")
+    origin = "Sens"
+    destination = "Troyes"
+    date = "19/11/2015"
+    number = "10"
+    url = blablacar_url(origin, destination, date, number)
+    soup = get_blablacar_soup(url)
+    number = get_number_blablacar(soup)
+    if int(number) > 10:
+        url = blablacar_url(origin, destination, date, number)
+        print(url)
+        soup = get_blablacar_soup(url)
+        for p in soup.find_all('h2', 'username'):
+            print(p.encode('utf-8').decode('cp1252'))
+    elif int(number) > 0:
+        print(url)
+        for p in soup.find_all('h2', 'username'):
+            print(p.encode('utf-8').decode('cp1252'))
+    else:
+        print("no results!")
 
 main()
 os.system("PAUSE")
