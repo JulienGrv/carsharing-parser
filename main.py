@@ -8,12 +8,13 @@ import urllib3
 import re
 import certifi
 import bs4 as BeautifulSoup
+import json
 
 ##
 # GET http request on a url
 # url - string
 ##
-def http_request(url):
+def https_request(url):
     http = urllib3.PoolManager(
         cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
     return http.request('GET', url)
@@ -53,17 +54,19 @@ def open_html(file_name):
 # destination
 # date
 ##
-def blablacar_url(origin, destination, date, limit):
-   return u"https://www.blablacar.co.uk/search?fn="+origin+"&tn="+destination+"&db="+date+"&sort=trip_date&order=asc&limit="+limit
+def get_blablacar_url(origin, destination, date, limit):
+   # return u"https://www.blablacar.co.uk/search?fn="+origin+"&tn="+destination+"&db="+date+"&sort=trip_date&order=asc&limit="+limit
+   # return u"https://www.blablacar.co.uk/search?fn="+origin+"&tn="+destination+"&db="+date+"&sort=trip_date&order=asc&limit=10"
+   return u"https://www.blablacar.co.uk/ride-sharing/london/birmingham/#?fn=London%2C+UK&fc=51.5073509%7C-0.1277583&fcc=GB&tn=Birmingham%2C+UK&tc=52.486243%7C-1.890401&tcc=GB&db=27%2F11%2F2015&sort=trip_date&order=asc&limit=10&page=1"
 
 ##
 #
 ##
 def get_blablacar_soup(url):
-    resp = http_request(url)
+    resp = https_request(url)
     html = html_content(resp)
     resp.close()
-    save_html(html, "test")
+    save_html(html, "blablacar")
     return BeautifulSoup.BeautifulSoup(html, "lxml")
 
 ##
@@ -76,19 +79,13 @@ def get_number_blablacar(soup):
         number = results.group(1)
     return number
 
-# main
-##
-def main():
-    print("Hello World!")
-    origin = "Sens"
-    destination = "Troyes"
-    date = "19/11/2015"
+def blablacar_search(origin, destination, date):
     number = "100"
-    url = blablacar_url(origin, destination, date, number)
+    url = get_blablacar_url(origin, destination, date, number)
     soup = get_blablacar_soup(url)
     number = get_number_blablacar(soup)
     if int(number) > 100:
-        url = blablacar_url(origin, destination, date, number)
+        url = get_blablacar_url(origin, destination, date, number)
         print(url)
         soup = get_blablacar_soup(url)
         for p in soup.find_all('h2', 'username'):
@@ -99,6 +96,43 @@ def main():
             print(p.encode('utf-8').decode('cp1252'))
     else:
         print("no results!")
+    pass
+
+def get_liftshare_url(origin, destination, date):
+    origin = re.sub(', ', "-", origin).lower()
+    destination = re.sub(', ', "-", destination).lower()
+    date = re.sub('/', "-", date)
+    return u"https://liftshare.com/uk/search/"+origin+"/"+destination+"/"+date
+
+def get_liftshare_soup(url):
+    resp = https_request(url)
+    html = html_content(resp)
+    resp.close()
+    results = re.search(r'<script type="application\/ld\+json">\r\n(.*)\r\n</script>', html, re.DOTALL)
+    if results:
+        json_input = results.group(1)
+        # print(json_input.encode('utf-8').decode('cp1252'))
+    save_html(html, "liftshare")
+    return BeautifulSoup.BeautifulSoup(html, "lxml"), json_input
+
+def liftshare_search(origin, destination, date):
+    url = get_liftshare_url(origin, destination, date)
+    soup, json_input = get_liftshare_soup(url)
+    # print(json_input.encode('utf-8').decode('cp1252'))
+    parsed_json = json.loads(json_input)
+    print(url)
+    for offer in parsed_json['@graph']:
+        print(offer['name'].encode('utf-8').decode('cp1252'))
+        print(offer['startDate'].encode('utf-8').decode('cp1252'))
+    pass
+
+# main
+##
+def main():
+    print("Hello World!")
+    blablacar_search("London, UK", "Birmingham, UK", "27/11/2015")
+    liftshare_search("London, UK", "Birmingham, UK", "27/11/15")
+    pass
 
 main()
 os.system("PAUSE")
